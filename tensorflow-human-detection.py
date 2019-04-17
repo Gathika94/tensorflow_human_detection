@@ -60,7 +60,7 @@ class DetectorAPI:
         self.default_graph.close()
 
 if __name__ == "__main__":
-    model_path = '/media/gathika/MainDisk/entgra_repos/human_detection/tensorflow/tensor_flow_human_detection/faster_rcnn_inception_v2_coco_2018_01_28/frozen_inference_graph.pb'
+    model_path = '/media/gathika/MainDisk/entgra_repos/human_detection/tensorflow/dependency/faster_rcnn_inception_v2_coco_2018_01_28/frozen_inference_graph.pb'
     odapi = DetectorAPI(path_to_ckpt=model_path)
     threshold = 0.7
     cap = cv2.VideoCapture('/media/gathika/MainDisk/entgra_repos/human_detection/video/video4.mp4')

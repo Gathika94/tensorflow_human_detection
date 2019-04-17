@@ -6,10 +6,18 @@ import numpy as np
 import tensorflow as tf
 import cv2
 import time
+import base64
 from random import randint
+from flask import Flask, request
+from flask_restful import Resource, Api
+import json
 
+app = Flask(__name__)
+api = Api(app)
 
 class DetectorAPI:
+
+
     def __init__(self, path_to_ckpt):
         self.path_to_ckpt = path_to_ckpt
 
@@ -60,14 +68,16 @@ class DetectorAPI:
         self.sess.close()
         self.default_graph.close()
 
-if __name__ == "__main__":
+@app.route('/getImage', methods=['GET'])
+def createNewImage():
+    time = int(request.args.get('time'))
     model_path = '/media/gathika/MainDisk/entgra_repos/human_detection/tensorflow/dependency/faster_rcnn_inception_v2_coco_2018_01_28/frozen_inference_graph.pb'
     odapi = DetectorAPI(path_to_ckpt=model_path)
     threshold = 0.7
     cap = cv2.VideoCapture('/media/gathika/MainDisk/entgra_repos/human_detection/video/video4.mp4')
-    start_frame_number = randint(0,1523)
+    start_frame_number = time
+    ENCODING = 'utf-8'
     cap.set(cv2.CAP_PROP_POS_FRAMES, start_frame_number)
-
 
     r, img = cap.read()
     img = cv2.resize(img, (1060, 600))
@@ -80,8 +90,8 @@ if __name__ == "__main__":
         # Class 1 represents human
         if classes[i] == 1 and scores[i] > threshold:
             box = boxes[i]
-            cv2.rectangle(img,(box[1],box[0]),(box[3],box[2]),(255,0,0),2)
-            count=count+1
+            cv2.rectangle(img, (box[1], box[0]), (box[3], box[2]), (255, 0, 0), 2)
+            count = count + 1
 
     # Write text on the frame
     font = cv2.FONT_HERSHEY_PLAIN
@@ -91,7 +101,32 @@ if __name__ == "__main__":
     lineType = 2
     cv2.putText(img, str(count), (100, 100), font, 4, (0, 0, 255), 2, cv2.LINE_AA)
 
-    cv2.imshow("preview", img)
-    key = cv2.waitKey(5000)
+  #  cv2.imshow("preview", img)
+  #  key = cv2.waitKey(5000)
 
+    cv2.imwrite("Snap.jpg", img)
+    newImage = cv2.imread("Snap.jpg", 1)
+    retval, buffer = cv2.imencode('.jpg', newImage)
+    image_as_text = base64.b64encode(buffer)
+    base64_string = image_as_text.decode(ENCODING)
+    output = {}
+    output["count"] = count
+    output["image"] = base64_string
+    jsonOutput = json.dumps(output)
+    return jsonOutput
+
+@app.route('/rawImage', methods=['GET'])
+def getLatestImage():
+    ENCODING = 'utf-8'
+    newImage = cv2.imread("Snap.jpg", 1)
+    retval, buffer = cv2.imencode('.jpg', newImage)
+    image_as_text = base64.b64encode(buffer)
+    base64_string = image_as_text.decode(ENCODING)
+    output = {}
+    output["image"] = base64_string
+    jsonOutput = json.dumps(output)
+    return jsonOutput
+
+if __name__ == "__main__":
+    app.run(port='5002')
 
