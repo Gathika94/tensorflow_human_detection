@@ -127,6 +127,52 @@ def getLatestImage():
     jsonOutput = json.dumps(output)
     return jsonOutput
 
+@app.route('/staticImage', methods=['GET'])
+def getStaticImageDetails():
+
+    model_path = '/media/gathika/MainDisk/entgra_repos/human_detection/tensorflow/dependency/faster_rcnn_inception_v2_coco_2018_01_28/frozen_inference_graph.pb'
+    odapi = DetectorAPI(path_to_ckpt=model_path)
+    threshold = 0.7
+    imagePath = '/media/gathika/MainDisk/entgra_repos/human_detection/images/2.jpg'
+    ENCODING = 'utf-8'
+    img = cv2.imread(imagePath)
+    img = cv2.resize(img, (1060, 600))
+
+    boxes, scores, classes, num = odapi.processFrame(img)
+
+    # Visualization of the results of a detection.
+    count = 0
+    for i in range(len(boxes)):
+        # Class 1 represents human
+        if classes[i] == 1 and scores[i] > threshold:
+            box = boxes[i]
+            cv2.rectangle(img, (box[1], box[0]), (box[3], box[2]), (255, 0, 0), 2)
+            count = count + 1
+
+    # Write text on the frame
+    font = cv2.FONT_HERSHEY_PLAIN
+    bottomLeftCornerOfText = (10, 500)
+    fontScale = 1
+    fontColor = (255, 255, 255)
+    lineType = 2
+    cv2.putText(img, str(count), (100, 100), font, 4, (0, 0, 255), 2, cv2.LINE_AA)
+
+
+    #cv2.imshow("preview", img)
+    #key = cv2.waitKey(5000)
+
+    cv2.imwrite("Snap.jpg", img)
+    newImage = cv2.imread("Snap.jpg", 1)
+    retval, buffer = cv2.imencode('.jpg', newImage)
+    image_as_text = base64.b64encode(buffer)
+    base64_string = image_as_text.decode(ENCODING)
+    output = {}
+    output["count"] = count
+    output["image"] = base64_string
+    jsonOutput = json.dumps(output)
+    return jsonOutput
+
+
 if __name__ == "__main__":
     app.run(port='5002')
 
